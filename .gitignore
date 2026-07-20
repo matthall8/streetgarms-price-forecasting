@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- project data & artefacts (keep dirs via .gitkeep, ignore contents) ---
+data/raw/*
+data/interim/*
+data/processed/*
+models/*
+reports/figures/*
+!**/.gitkeep
+
+# secrets / Shopify credentials
+.env
+config/secrets.*
