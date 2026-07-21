@@ -228,3 +228,6 @@ reports/figures/*
 # secrets / Shopify credentials
 .env
 config/secrets.*
+
+# macOS
+.DS_Store
