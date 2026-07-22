@@ -37,6 +37,7 @@ query Sales($cursor: String) {
                 selectedOptions { name value }
               }
               product {
+                productType
                 createdAt
                 publishedAt
                 vendor
@@ -136,6 +137,7 @@ def line_item_to_row(order_node: dict, li_node: dict) -> dict:
         "title": li_node["title"],
         "sku": li_node.get("sku") or "",
         "brand": prod.get("vendor", "") or "",
+        "product_type": prod.get("productType") or "",
         **parse_title(li_node["title"], prod.get("vendor", "") or ""),
         "listed_at": prod.get("createdAt") or "",
         "published_at": prod.get("publishedAt") or "",
