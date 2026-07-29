@@ -16,6 +16,7 @@ permutation importance showed them to be noise (zero/negative on the test set).
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import OneHotEncoder
 
 TARGET = "sold_price"
@@ -24,6 +25,8 @@ TIME_COL = "sold_at"
 # condition_grade is one-hot, not ordinal: verified non-monotonic vs price
 # (Brand New n=8 sits BELOW Great/Fantastic/Like New), so no clean order to impose.
 NOMINAL = ["brand", "product_type", "size", "colour", "gender", "condition_grade"]
+# free-text product name -> tokenised; fabric/model terms carry price signal.
+TEXT_COL = "product_name"
 
 # --- product_type fallback parser (coalesce Shopify field w/ product_name) ---
 PRODUCT_TYPES = {
@@ -62,21 +65,31 @@ def prepare(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df = add_product_type(df)
     df[NOMINAL] = df[NOMINAL].fillna("Unknown")
+    df[TEXT_COL] = df[TEXT_COL].fillna("").astype(str)
     return df
 
 
-def build_preprocessor(min_frequency: int = 5) -> ColumnTransformer:
+def build_preprocessor(min_frequency: int = 5, min_title_df: int = 10) -> ColumnTransformer:
     """sklearn preprocessor — FIT ON TRAIN ONLY.
 
     Categories rarer than `min_frequency` in train collapse into one bucket;
-    unseen test categories route there too.
+    unseen test categories route there too. product_name tokens appearing in
+    fewer than `min_title_df` train rows are dropped — the guard against
+    overfitting the near-unique names.
     """
     nominal = OneHotEncoder(
         min_frequency=min_frequency,
         handle_unknown="infrequent_if_exist",
         sparse_output=False,
     )
-    return ColumnTransformer([("nominal", nominal, NOMINAL)], remainder="drop")
+    title = CountVectorizer(binary=True, min_df=min_title_df)
+    return ColumnTransformer(
+        [
+            ("nominal", nominal, NOMINAL),
+            ("title", title, TEXT_COL),
+        ],
+        remainder="drop",
+    )
 
 
 def load_xy(in_path: str = "data/interim/sales_clean.csv"):
@@ -88,7 +101,7 @@ def load_xy(in_path: str = "data/interim/sales_clean.csv"):
     """
     df = pd.read_csv(in_path, parse_dates=[TIME_COL])
     df = prepare(df)
-    X = df[NOMINAL]
+    X = df[NOMINAL + [TEXT_COL]]
     y = np.log(df[TARGET])
     meta = df[[TIME_COL]]
     return X, y, meta
