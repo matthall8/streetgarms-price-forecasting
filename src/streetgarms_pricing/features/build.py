@@ -24,7 +24,7 @@ TIME_COL = "sold_at"
 
 # condition_grade is one-hot, not ordinal: verified non-monotonic vs price
 # (Brand New n=8 sits BELOW Great/Fantastic/Like New), so no clean order to impose.
-NOMINAL = ["brand", "product_type", "size", "colour", "gender", "condition_grade"]
+NOMINAL = ["brand", "product_type", "size", "colour", "gender", "condition_grade", "platform"]
 # free-text product name -> tokenised; fabric/model terms carry price signal.
 TEXT_COL = "product_name"
 
@@ -63,6 +63,9 @@ def add_product_type(df: pd.DataFrame) -> pd.DataFrame:
 def prepare(df: pd.DataFrame) -> pd.DataFrame:
     """Deterministic, row-wise feature prep (safe to run before the split)."""
     df = df.copy()
+    for col in NOMINAL:                         # tolerate sources missing a column
+        if col not in df.columns:
+            df[col] = pd.NA
     df = add_product_type(df)
     df[NOMINAL] = df[NOMINAL].fillna("Unknown")
     df[TEXT_COL] = df[TEXT_COL].fillna("").astype(str)

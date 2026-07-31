@@ -17,6 +17,7 @@ from sklearn.pipeline import Pipeline
 
 from streetgarms_pricing.features.build import build_preprocessor, load_xy
 
+DATASET = "data/interim/sales_combined.csv"
 MODEL_PATH = Path("models/price_model.joblib")
 
 
@@ -29,7 +30,7 @@ def build_model() -> TransformedTargetRegressor:
 
 
 def train(out_path: Path = MODEL_PATH) -> TransformedTargetRegressor:
-    X, y_log, _ = load_xy()
+    X, y_log, _ = load_xy(DATASET)
     y_price = np.exp(y_log)              # load_xy returns log target; undo for the wrapper
     model = build_model()
     model.fit(X, y_price)               # fit on ALL rows

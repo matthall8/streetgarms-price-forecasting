@@ -99,10 +99,14 @@ def drop_invalid_target(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _apply_map(df: pd.DataFrame, col: str, mapping: dict[str, str]) -> None:
-    """Case-insensitive deterministic remap; unmapped values pass through."""
+    """Case-insensitive deterministic remap; unmapped values pass through.
+
+    Uses the pandas "string" dtype so it works even when the column is entirely
+    empty (e.g. title-only rows, where brand/colour/etc. are all NaN -> float).
+    """
     if col in df.columns:
-        key = df[col].str.strip().str.lower()
-        df[col] = key.map(mapping).fillna(df[col].str.strip())
+        s = df[col].astype("string").str.strip()
+        df[col] = s.str.lower().map(mapping).fillna(s)
 
 
 def normalise_categoricals(df: pd.DataFrame) -> pd.DataFrame:
@@ -175,6 +179,7 @@ def clean(
     df = normalise_categoricals(df)
     df = normalise_size(df)
     df = neutralise_import_spike(df)   # optional — comment out if unwanted
+    df["platform"] = "shopify"         # source tag for multi-platform training
 
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_path, index=False)
