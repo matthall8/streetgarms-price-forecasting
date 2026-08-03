@@ -5,23 +5,28 @@ Run from the repo root:
 """
 import numpy as np
 from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
+from xgboost import XGBRegressor
 
 from streetgarms_pricing.features.build import build_preprocessor, load_xy
 from streetgarms_pricing.models.metrics import report
 from streetgarms_pricing.models.split import time_split
 
+DATASET = "data/interim/sales_combined.csv"
+
 MODELS = {
     "naive (median)": DummyRegressor(strategy="median"),
     "ridge (baseline)": Ridge(alpha=1.0),
     "hist gradient boosting": HistGradientBoostingRegressor(random_state=0),
+    "random forest": RandomForestRegressor(n_estimators=300, random_state=0, n_jobs=-1),
+    "xgboost": XGBRegressor(n_estimators=300, random_state=0, n_jobs=-1, verbosity=0),
 }
 
 
 def run() -> None:
-    X, y, meta = load_xy()
+    X, y, meta = load_xy(DATASET)
     train = time_split(meta)
     print(f"train {int(train.sum())} | test {int((~train).sum())}  "
           f"(time split, log target)\n")

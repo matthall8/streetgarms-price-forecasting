@@ -1,3 +1,5 @@
+"""Extracts Shopify data using the Shopify API"""
+
 import os
 import re
 import json
