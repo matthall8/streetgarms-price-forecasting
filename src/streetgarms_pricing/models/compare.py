@@ -8,6 +8,7 @@ from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
+from xgboost import XGBRegressor
 
 from streetgarms_pricing.features.build import build_preprocessor, load_xy
 from streetgarms_pricing.models.metrics import report
@@ -20,6 +21,7 @@ MODELS = {
     "ridge (baseline)": Ridge(alpha=1.0),
     "hist gradient boosting": HistGradientBoostingRegressor(random_state=0),
     "random forest": RandomForestRegressor(n_estimators=300, random_state=0, n_jobs=-1),
+    "xgboost": XGBRegressor(n_estimators=300, random_state=0, n_jobs=-1, verbosity=0),
 }
 
 
