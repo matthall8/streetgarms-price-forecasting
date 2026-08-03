@@ -1,15 +1,11 @@
-"""Concatenate the cleaned per-source interim files into one training dataset.
-
-Each source (Shopify, Vinted, …) is cleaned to the shared schema separately and
-carries a `platform` column; this stacks them into the file the models read.
-"""
+"""Consolidates the Vinted and Shopify data"""
 from pathlib import Path
 
 import pandas as pd
 
 SOURCES = [
-    "data/interim/sales_clean.csv",     # shopify
-    "data/interim/vinted_clean.csv",    # vinted
+    "data/interim/shopify_clean.csv",     
+    "data/interim/vinted_clean.csv",    
 ]
 OUT = "data/interim/sales_combined.csv"
 

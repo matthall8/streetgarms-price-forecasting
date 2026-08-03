@@ -6,26 +6,24 @@ import pandas as pd
 
 DATE_COLS = ["sold_at", "listed_at", "published_at"]
 
-# --- known-misspelling / variant fixes (deterministic) -----------------------
+# Known-misspelling / variant fixes
 BRAND_FIXES: dict[str, str] = {
     "stone isand": "Stone Island",
     "stone island ": "Stone Island",
     "stoen island": "Stone Island",
-    "Stoen Island": "Stone Island",   
+    "Stoen Island": "Stone Island",
     "Arc‚Äôteryx": "Arc'teryx",
+    "rab": "RAB",                 
 }
 
-# condition_grade misspellings. Valid grades: Great < Fantastic < Like New
-# < Brand New (encode as ordinal in the feature step).
+# Known condition_grade misspellings. 
 CONDITION_FIXES: dict[str, str] = {
     "fanatstic": "Fantastic",
     "fantatsic": "Fantastic",
 }
 
-# Roll granular / rare colours into a base palette (deterministic taxonomy).
-# Base colours (not listed here) pass through unchanged.
+# Consolidate granular / rare colours (<5 quantity) into base group
 COLOUR_MAP: dict[str, str] = {
-    # misspellings
     "burgandy": "Burgundy", "biege": "Beige",
     # blues (+ navy variant)
     "royal blue": "Blue", "light blue": "Blue", "pale blue": "Blue",
@@ -58,8 +56,7 @@ COLOUR_MAP: dict[str, str] = {
     "camo": "Multi", "labryinth": "Multi", "blue/white": "Multi", "medium": "Multi",
 }
 
-# Canonical clothing sizes. `size` also encodes gender + a numeric tail
-# (waist/EU/shoe), so parse_size() splits gender out and buckets numerics.
+# Canonical clothing sizes + splits out gender 
 CANON_SIZE: dict[str, str] = {
     "xs": "XS", "x-small": "XS",
     "s": "S", "small": "S",
@@ -72,14 +69,12 @@ CANON_SIZE: dict[str, str] = {
     "one size": "One Size", "os": "One Size",
 }
 
-
 def load_raw(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, dtype={"sku": str, "art_number": str})
     for col in DATE_COLS:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
     return df
-
 
 def blanks_to_na(df: pd.DataFrame) -> pd.DataFrame:
     """Empty / whitespace-only strings -> NA, so missingness is consistent."""
@@ -99,18 +94,14 @@ def drop_invalid_target(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _apply_map(df: pd.DataFrame, col: str, mapping: dict[str, str]) -> None:
-    """Case-insensitive deterministic remap; unmapped values pass through.
-
-    Uses the pandas "string" dtype so it works even when the column is entirely
-    empty (e.g. title-only rows, where brand/colour/etc. are all NaN -> float).
-    """
+    """Case-insensitive deterministic remap; unmapped values pass through."""
     if col in df.columns:
-        s = df[col].astype("string").str.strip()
+        s = df[col].astype("string").str.strip().str.replace("’", "'", regex=False)
         df[col] = s.str.lower().map(mapping).fillna(s)
 
 
 def normalise_categoricals(df: pd.DataFrame) -> pd.DataFrame:
-    """Fix misspellings / roll up variants. Deterministic maps only."""
+    """Fix misspellings / consolidate variants."""
     _apply_map(df, "brand", BRAND_FIXES)
     _apply_map(df, "condition_grade", CONDITION_FIXES)
     _apply_map(df, "colour", COLOUR_MAP)
@@ -171,8 +162,9 @@ def neutralise_import_spike(df: pd.DataFrame, min_share: float = 0.10) -> pd.Dat
 
 def clean(
     in_path: str = "data/raw/shopify_sales_data_complete_data.csv",
-    out_path: str = "data/interim/sales_clean.csv",
+    out_path: str = "data/interim/shopify_clean.csv",
 ) -> pd.DataFrame:
+    """Full clean function to apply all helper functions"""
     df = load_raw(in_path)
     df = blanks_to_na(df)
     df = drop_invalid_target(df)

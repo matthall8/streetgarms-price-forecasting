@@ -36,7 +36,7 @@ PRODUCT_TYPES = {
     "jumper": ["jumper", "sweater", "knit", "cardigan"],
     "gilet": ["gilet"],
     "jacket": ["jacket", "coat", "parka", "puffer"],
-    "tshirt": ["t-shirt", "t shirt", "tee", "jersey"],
+    "tshirt": ["t-shirt", "t shirt", "tshirt", "tee", "jersey"],  # 'tshirt' -> idempotent
     "shirt": ["shirt"],
     "shorts": ["shorts"],
     "trousers": ["cargo", "trousers", "pants", "sweatpants", "joggers"],
@@ -52,11 +52,15 @@ def _parse_type(name) -> str:
 
 
 def add_product_type(df: pd.DataFrame) -> pd.DataFrame:
-    """Coalesce Shopify productType with a product_name parse fallback."""
-    pt = df["product_type"].astype("string").str.strip().str.lower()
-    missing = pt.isna() | (pt == "")
-    pt = pt.where(~missing, df["product_name"].map(_parse_type))
-    df["product_type"] = pt.fillna("unknown")
+    """Canonicalise product_type to ONE vocabulary via _parse_type, across every
+    source. Uses the product_type field when present, else the product_name text.
+    Fixes fragmented categories (t-shirt vs tshirt, Pants vs trousers) and buckets
+    non-garments (bag/hat/'stone island') into 'other'.
+    """
+    src = df["product_type"].astype("string").str.strip()
+    missing = src.isna() | (src == "")
+    src = src.where(~missing, df["product_name"])
+    df["product_type"] = src.map(_parse_type)
     return df
 
 
@@ -95,7 +99,7 @@ def build_preprocessor(min_frequency: int = 5, min_title_df: int = 10) -> Column
     )
 
 
-def load_xy(in_path: str = "data/interim/sales_clean.csv"):
+def load_xy(in_path: str = "data/interim/sales_combined.csv"):
     """Load interim -> (X features, y = log(sold_price), meta with sold_at).
 
     Returns the raw feature frame X (un-encoded) so the caller can time-split

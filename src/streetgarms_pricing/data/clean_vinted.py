@@ -1,16 +1,7 @@
-"""Parse a Vinted sales export into cleaned interim rows in the shared schema.
-
-Vinted CSV columns: Date, Brand, Product, Category, Sold for (GBP).
-Maps to: sold_at, brand, product_name, product_type, sold_price, platform=vinted.
-Fields Vinted doesn't provide (size/colour/gender/condition_grade) -> NA -> Unknown
-downstream. Titles are the same rich style as Shopify, so the token feature and
-brand/product_type carry the signal.
-"""
+"""Cleans the Vinted sales export into cleaned interim rows in the shared schema."""
 from pathlib import Path
 
 import pandas as pd
-
-from streetgarms_pricing.features.build import _parse_type  # shared garment-type parser
 
 PLATFORM = "vinted"
 
@@ -25,10 +16,11 @@ def parse_vinted(
         "sold_price": v["Sold for (GBP)"].str.replace(r"[£,]", "", regex=True).astype(float),
         "brand": v["Brand"].astype("string").str.strip(),
         "product_name": v["Product"].astype("string").str.strip(),
-        "product_type": v["Category"].map(_parse_type),
+        "product_type": v["Category"],          # canonicalised centrally in add_product_type
         "platform": PLATFORM,
+        "gender": "Mens",                       # men's-default shop
     })
-    for col in ("size", "colour", "gender", "condition_grade"):
+    for col in ("size", "colour", "condition_grade"):
         out[col] = pd.NA                       # not provided by Vinted
     out = out[out["sold_price"].notna() & (out["sold_price"] > 0)].copy()
 
