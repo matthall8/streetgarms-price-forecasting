@@ -4,8 +4,9 @@ from pathlib import Path
 import pandas as pd
 
 SOURCES = [
-    "data/interim/shopify_clean.csv",     
-    "data/interim/vinted_clean.csv",    
+    "data/interim/shopify_clean.csv",
+    "data/interim/vinted_clean.csv",
+    "data/interim/depop_clean.csv",
 ]
 OUT = "data/interim/sales_combined.csv"
 
