@@ -96,6 +96,7 @@ def build_preprocessor(min_frequency: int = 5, min_title_df: int = 10) -> Column
             ("title", title, TEXT_COL),
         ],
         remainder="drop",
+        sparse_threshold=0.0,   # always dense — HGB/XGBoost require it as tokens grow
     )
 
 
@@ -106,7 +107,8 @@ def load_xy(in_path: str = "data/interim/sales_combined.csv"):
     first, THEN fit the preprocessor on train only. meta[TIME_COL] drives the
     split (see models/split.py).
     """
-    df = pd.read_csv(in_path, parse_dates=[TIME_COL])
+    df = pd.read_csv(in_path)
+    df[TIME_COL] = pd.to_datetime(df[TIME_COL], utc=True, format="mixed")
     df = prepare(df)
     X = df[NOMINAL + [TEXT_COL]]
     y = np.log(df[TARGET])
