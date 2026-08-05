@@ -7,3 +7,4 @@ joblib
 requests
 tqdm
 python-dotenv
+streamlit
