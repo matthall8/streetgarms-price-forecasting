@@ -40,7 +40,7 @@ DEFAULTS = {
 
 @lru_cache(maxsize=1)
 def _load_model(path: str = str(MODEL_PATH)):
-    return joblib.load(path)
+    return joblib.load(path)["pipeline"]   # artifact is a bundle: {pipeline, conformal_factor, alpha}
 
 
 def predict(**features) -> float:
